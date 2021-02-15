@@ -3,11 +3,11 @@ import fs from "fs";
 import { RequestHandler } from "express";
 // import extractFrames from "ffmpeg-extract-frames";
 import ffmpeg from "ffmpeg";
-import { Color, getColorFromURL } from "color-thief-node";
 import { sortFiles } from "util/sortFiles";
 import { createCanvas } from "canvas";
 import createHttpError from "http-errors";
 import { getColorFromFiles } from "util/getMultipleColors";
+import { extractVideoFrames } from "util/extractVideoFrames";
 
 const canvas = createCanvas(1000, 200);
 const ctx = canvas.getContext("2d");
@@ -22,18 +22,19 @@ export const receiveFile: RequestHandler[] = [
     try {
       fs.mkdirSync(FRAMES_DIR);
 
-      const video = await new ffmpeg(req.file.path);
+      await extractVideoFrames(req.file.path, FRAMES_DIR);
+      // const video = await new ffmpeg(req.file.path);
 
-      const seconds = video.metadata.duration?.seconds;
-      video.setDisableAudio();
-      video.setDisableVideo();
-      video.setVideoFormat("mp4");
-      console.log("Extracting frames");
-      await video.fnExtractFrameToJPG(FRAMES_DIR, {
-        frame_rate: 1000 / (seconds || 1),
-        size: "10%",
-      });
-      console.log("Done");
+      // const seconds = video.metadata.duration?.seconds;
+      // video.setDisableAudio();
+      // video.setDisableVideo();
+      // video.setVideoFormat("mp4");
+      // console.log("Extracting frames");
+      // await video.fnExtractFrameToJPG(FRAMES_DIR, {
+      //   frame_rate: 1000 / (seconds || 1),
+      //   size: "10%",
+      // });
+      // console.log("Done");
       const files = fs.readdirSync(FRAMES_DIR);
       const sorted = sortFiles(files, FRAMES_DIR);
       console.log("Getting colors");
