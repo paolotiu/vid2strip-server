@@ -7,6 +7,7 @@ import { Color, getColorFromURL } from "color-thief-node";
 import { sortFiles } from "util/sortFiles";
 import { createCanvas } from "canvas";
 import createHttpError from "http-errors";
+import { getColorFromFiles } from "util/getMultipleColors";
 
 const canvas = createCanvas(1000, 200);
 const ctx = canvas.getContext("2d");
@@ -22,30 +23,25 @@ export const receiveFile: RequestHandler[] = [
       fs.mkdirSync(FRAMES_DIR);
 
       const video = await new ffmpeg(req.file.path);
-      const metadata = video.metadata;
 
+      const seconds = video.metadata.duration?.seconds;
+      video.setDisableAudio();
+      video.setDisableVideo();
+      video.setVideoFormat("mp4");
       console.log("Extracting frames");
       await video.fnExtractFrameToJPG(FRAMES_DIR, {
-        frame_rate: 1000 / (metadata.duration?.seconds || 1),
+        frame_rate: 1000 / (seconds || 1),
+        size: "10%",
       });
       console.log("Done");
       const files = fs.readdirSync(FRAMES_DIR);
       const sorted = sortFiles(files, FRAMES_DIR);
       console.log("Getting colors");
 
-      // const colors = await Promise.all(
-      //   sorted.map(async (file) => {
-      //     return await getColorFromURL(FRAMES_DIR + "/" + file);
-      //   })
-      // );
-      const colors = await (async () => {
-        const colors: Color[] = [];
-        for (const file of sorted) {
-          const color = await getColorFromURL(FRAMES_DIR + "/" + file);
-          colors.push(color);
-        }
-        return colors;
-      })();
+      const colors = await getColorFromFiles(
+        sorted.map((file) => FRAMES_DIR + "/" + file)
+      );
+
       console.log("Drawing canvas");
       let count = 0;
       ctx.lineWidth = 1;
@@ -54,7 +50,7 @@ export const receiveFile: RequestHandler[] = [
 
       for (const color of colors) {
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1)`;
+        ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
         ctx.moveTo(count, 0);
         ctx.lineTo(count, 200);
         ctx.stroke();
@@ -64,7 +60,7 @@ export const receiveFile: RequestHandler[] = [
 
       fs.writeFileSync("./image.png", canvas.toBuffer("image/png"));
       fs.unlinkSync(req.file.path);
-      // fs.rmdirSync(FRAMES_DIR, { recursive: true });
+      fs.rmdirSync(FRAMES_DIR, { recursive: true });
       res.json({ colors });
     } catch (error) {
       console.log(error);
