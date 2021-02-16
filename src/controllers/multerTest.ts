@@ -2,15 +2,11 @@ import { upload } from "config/multer";
 import fs from "fs";
 import { RequestHandler } from "express";
 // import extractFrames from "ffmpeg-extract-frames";
-import ffmpeg from "ffmpeg";
 import { sortFiles } from "util/sortFiles";
-import { createCanvas } from "canvas";
 import createHttpError from "http-errors";
 import { getColorFromFiles } from "util/getMultipleColors";
 import { extractVideoFrames } from "util/extractVideoFrames";
-
-const canvas = createCanvas(1000, 200);
-const ctx = canvas.getContext("2d");
+import { createCanvasLines } from "util/createCanvasLines";
 
 export const receiveFile: RequestHandler[] = [
   upload.single("vid"),
@@ -20,50 +16,38 @@ export const receiveFile: RequestHandler[] = [
     }
     const FRAMES_DIR = "./frames/" + req.file.filename;
     try {
+      // Make directory for video frames to go to
       fs.mkdirSync(FRAMES_DIR);
 
+      // Extract video frames
+      // Input Path = file path
+      // Output Path = ./frames/<filename>
       await extractVideoFrames(req.file.path, FRAMES_DIR);
-      // const video = await new ffmpeg(req.file.path);
 
-      // const seconds = video.metadata.duration?.seconds;
-      // video.setDisableAudio();
-      // video.setDisableVideo();
-      // video.setVideoFormat("mp4");
-      // console.log("Extracting frames");
-      // await video.fnExtractFrameToJPG(FRAMES_DIR, {
-      //   frame_rate: 1000 / (seconds || 1),
-      //   size: "10%",
-      // });
-      // console.log("Done");
+      // Get the files then sort
       const files = fs.readdirSync(FRAMES_DIR);
       const sorted = sortFiles(files, FRAMES_DIR);
+
       console.log("Getting colors");
 
+      // Returns an array of tuples which are [<red>, <green>, <blue>]
       const colors = await getColorFromFiles(
         sorted.map((file) => FRAMES_DIR + "/" + file)
       );
 
-      console.log("Drawing canvas");
-      let count = 0;
-      ctx.lineWidth = 1;
+      console.log("Creating Photo");
 
-      console.log("Drawing lines");
+      // Create canvas with lines
+      const canvas = createCanvasLines(colors);
 
-      for (const color of colors) {
-        ctx.beginPath();
-        ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-        ctx.moveTo(count, 0);
-        ctx.lineTo(count, 200);
-        ctx.stroke();
-        ctx.closePath();
-        count += 1;
-      }
-
-      fs.writeFileSync("./image.png", canvas.toBuffer("image/png"));
+      // Cleanup vid and photos
       fs.unlinkSync(req.file.path);
       fs.rmdirSync(FRAMES_DIR, { recursive: true });
-      res.json({ colors });
+
+      // Return data url of image
+      res.json({ image: canvas.toDataURL("image/jpeg") });
     } catch (error) {
+      // TODO: Better error handling
       console.log(error);
       res.json("");
     }
