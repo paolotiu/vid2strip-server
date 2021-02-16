@@ -83,10 +83,10 @@ declare module "ffmpeg" {
     ITCH: string;
   }>;
 
-  type Duration = {
+  interface Duration {
     raw: string;
     seconds: number;
-  };
+  }
 
   type FLVMetadata = Partial<{
     duration: Duration;
