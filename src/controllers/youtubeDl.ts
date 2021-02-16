@@ -15,8 +15,12 @@ export const youtube: RequestHandler = async (req, res, next) => {
 
   // File path
   const id = uuid();
-  const VID_DIR = "./tmp/yt/" + id;
-  const FRAMES_DIR = "./frames/yt/" + id;
+  const VID_DIR = "./tmp";
+  const VID_FILE = "./tmp/" + id;
+  const FRAMES_DIR = "./frames/" + id;
+
+  // Create dir to populate
+  fs.mkdirSync(FRAMES_DIR);
 
   // Validate Url
   if (!ytdl.validateURL(url)) return next(createHttpError(400, "Not a valid url"));
@@ -39,22 +43,26 @@ export const youtube: RequestHandler = async (req, res, next) => {
   });
 
   // Readstream to monitor the file
-  const stream = readStream.pipe(fs.createWriteStream(VID_DIR));
+  const stream = readStream.pipe(str).pipe(fs.createWriteStream(VID_FILE));
 
   stream.on("finish", async () => {
-    const clearDirInvteral = setDirFileCountInterval(FRAMES_DIR, 1000);
+    console.log("Downlaod finished");
+    try {
+      const clearDirInvteral = await setDirFileCountInterval(FRAMES_DIR, 1000);
 
-    await extractVideoFrames(VID_DIR, FRAMES_DIR);
+      await extractVideoFrames(VID_FILE, FRAMES_DIR);
 
-    clearDirInvteral();
-    // Get the files then sort
-    const files = fs.readdirSync(FRAMES_DIR);
-    const sorted = sortFiles(files, FRAMES_DIR);
+      clearDirInvteral();
+      // Get the files then sort
+      const files = fs.readdirSync(FRAMES_DIR);
+      const sorted = sortFiles(files, FRAMES_DIR);
+      // Returns an array of tuples which are [<red>, <green>, <blue>]
+      const colors = await getColorFromFiles(sorted.map((file) => FRAMES_DIR + "/" + file));
 
-    // Returns an array of tuples which are [<red>, <green>, <blue>]
-    const colors = await getColorFromFiles(sorted.map((file) => FRAMES_DIR + "/" + file));
-
-    const canvas = createCanvasLines(colors);
-    res.json({ url: canvas.toDataURL("image/jpeg") });
+      const canvas = createCanvasLines(colors);
+      res.json({ url: canvas.toDataURL("image/jpeg") });
+    } catch (error) {
+      return next(createHttpError(400, error.message));
+    }
   });
 };
