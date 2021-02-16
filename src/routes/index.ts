@@ -7,6 +7,6 @@ router.get("/", (req, res, next) => {
   res.send("Hello World");
 });
 router.get("/yt", youtube);
-router.post("/photo", receiveFile);
+router.post("/vid", receiveFile);
 
 export default router;
