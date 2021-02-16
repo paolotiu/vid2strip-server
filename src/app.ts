@@ -2,12 +2,15 @@ import express, { NextFunction, Request, Response } from "express";
 import createError from "http-errors";
 import logger from "morgan";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 const app = express();
 
 // Import routes
 import IndexRouter from "./routes";
 
+// CORS
+app.use(cors());
 // Setup middlewares
 app.use(logger("dev"));
 app.use(express.json());
