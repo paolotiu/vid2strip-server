@@ -1,11 +1,15 @@
 import fs from "fs";
 
-export const setDirFileCountInterval = async (path: string, ms: number) => {
-  const cb = async () => {
+export const setDirFileCountInterval = async (
+  path: string,
+  cb: (files: string[]) => void,
+  ms: number
+) => {
+  const callback = async () => {
     const files = await fs.promises.readdir(path);
-    console.log(files.length);
+    cb(files);
   };
-  const interval = setInterval(cb, ms);
+  const interval = setInterval(callback, ms);
 
   return () => clearInterval(interval);
 };
