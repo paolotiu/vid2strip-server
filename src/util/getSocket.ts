@@ -1,10 +1,13 @@
 import { Sockets } from "config/socket";
 import { Request } from "express";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 
-export const getSocket = (req: Request, id: string) => {
+export type Emitter = (event: string, payload: any) => boolean;
+export const getSocket = (req: Request, id: string): Emitter | null => {
   const io = req.app.get("io") as Server;
   const sockets = req.app.get("sockets") as Sockets;
+  const socketId = sockets[id];
+  console.log(socketId);
 
-  return sockets[id] ? io.to(sockets[id]) : null;
+  return socketId ? (event: string, payload: any) => io.to(socketId).emit(event, payload) : null;
 };

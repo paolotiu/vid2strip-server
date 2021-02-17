@@ -1,4 +1,5 @@
 import fs from "fs";
+import { Emitter } from "./getSocket";
 
 export const setDirFileCountInterval = async (
   path: string,
@@ -12,4 +13,9 @@ export const setDirFileCountInterval = async (
   const interval = setInterval(callback, ms);
 
   return () => clearInterval(interval);
+};
+
+// update status
+export const emitStatus = (emitter: Emitter) => (files: string[]) => {
+  emitter("status", Math.floor((files.length / 1000) * 100) + "%");
 };
