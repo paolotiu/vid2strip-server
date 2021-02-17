@@ -48,7 +48,13 @@ export const youtube: RequestHandler = async (req, res, next) => {
   stream.on("finish", async () => {
     console.log("Downlaod finished");
     try {
-      const clearDirInvteral = await setDirFileCountInterval(FRAMES_DIR, 1000);
+      const clearDirInvteral = await setDirFileCountInterval(
+        FRAMES_DIR,
+        (files) => {
+          console.log(files.length);
+        },
+        1000
+      );
 
       await extractVideoFrames(VID_FILE, FRAMES_DIR);
 
