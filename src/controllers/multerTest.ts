@@ -1,19 +1,36 @@
 import { upload } from "config/multer";
 import fs from "fs";
 import { RequestHandler } from "express";
-// import extractFrames from "ffmpeg-extract-frames";
 import { sortFiles } from "util/sortFiles";
 import createHttpError from "http-errors";
 import { getColorFromFiles } from "util/getMultipleColors";
 import { extractVideoFrames } from "util/extractVideoFrames";
 import { createCanvasLines } from "util/createCanvasLines";
+import { getSocket } from "util/getSocket";
+import { setDirFileCountInterval } from "util/setDirFileCountInterval";
 
 export const receiveFile: RequestHandler[] = [
   upload.single("vid"),
   async (req, res, next) => {
+    const { socketId } = req.body as { socketId: string };
+
+    // Check if socketId exists
+    if (!socketId) {
+      return next(createHttpError(400, "Socket ID needed"));
+    }
+
+    // Get client socket
+    const socket = getSocket(req, socketId);
+
+    // Validation check
+    if (!socket) {
+      return next(createHttpError(400, "No socket with that id"));
+    }
     if (!req.file) {
       return next(createHttpError(400, "No file attached"));
     }
+
+    // Output directory of ffmpeg
     const FRAMES_DIR = "./frames/" + req.file.filename;
     try {
       // Make directory for video frames to go to
@@ -22,7 +39,18 @@ export const receiveFile: RequestHandler[] = [
       // Extract video frames
       // Input Path = file path
       // Output Path = ./frames/<filename>
+      socket.emit("status", "Extracting Frames");
+
+      // Watch dir callback
+      const clear = await setDirFileCountInterval(
+        FRAMES_DIR,
+        (files) => {
+          socket.emit("status", files.length + "%");
+        },
+        1000
+      );
       await extractVideoFrames(req.file.path, FRAMES_DIR);
+      clear();
 
       // Get the files then sort
       const files = fs.readdirSync(FRAMES_DIR);
@@ -31,9 +59,7 @@ export const receiveFile: RequestHandler[] = [
       console.log("Getting colors");
 
       // Returns an array of tuples which are [<red>, <green>, <blue>]
-      const colors = await getColorFromFiles(
-        sorted.map((file) => FRAMES_DIR + "/" + file)
-      );
+      const colors = await getColorFromFiles(sorted.map((file) => FRAMES_DIR + "/" + file));
 
       console.log("Creating Photo");
 
