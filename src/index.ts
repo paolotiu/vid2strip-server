@@ -1,9 +1,8 @@
-#!/usr/bin/env node
-
 // Import deps
 import app from "./app";
 const debug = require("debug")("server");
 import http from "http";
+import { setupSocket } from "config/socket";
 
 // Set the port
 const port = process.env.PORT || "3001";
@@ -11,6 +10,7 @@ app.set("port", port);
 
 // Create http server
 const server = http.createServer(app);
+setupSocket(server, app);
 
 // Listen
 server.listen(port);
