@@ -16,7 +16,7 @@ router.post("/", (req, res, next) => {
   console.log(req.app.get("sockets"));
   res.json("hey");
 });
-router.get("/yt", youtube);
+router.post("/yt", youtube);
 router.post("/vid", receiveFile);
 
 export default router;
