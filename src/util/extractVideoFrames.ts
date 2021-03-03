@@ -1,6 +1,9 @@
 import ffmpeg from "ffmpeg";
 
-export const extractVideoFrames = async (input: string, output: string, size?: string) => {
+type Options = {
+  isYoutube: boolean;
+};
+export const extractVideoFrames = async (input: string, output: string, opts?: Options) => {
   const video = await new ffmpeg(input);
 
   const seconds = video.metadata.duration?.seconds;
@@ -8,10 +11,15 @@ export const extractVideoFrames = async (input: string, output: string, size?: s
   video.setDisableVideo();
   video.setVideoFormat("mp4");
   console.log("Extracting frames");
-  const options = {
-    frame_rate: 1000 / (seconds || 1000),
-    size: "1%",
-  };
+  const options = opts?.isYoutube
+    ? {
+        frame_rate: 1000 / (seconds || 1000),
+        size: "2%",
+      }
+    : {
+        frame_rate: 1000 / (seconds || 1000),
+        size: "1%",
+      };
 
   await video.fnExtractFrameToJPG(output, options);
   console.log("Done");
