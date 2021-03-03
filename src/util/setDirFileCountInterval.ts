@@ -16,7 +16,7 @@ export const setDirFileCountInterval = async (
 };
 
 // update status
-export const emitStatus = (emitter: Emitter) => (files: string[] | number) => {
+export const emitFileCountStatus = (emitter: Emitter) => (files: string[] | number) => {
   const fileCount = typeof files === "number" ? files : files.length;
   emitter("status", {
     event: "Frames",

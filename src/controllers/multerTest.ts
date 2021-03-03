@@ -7,7 +7,7 @@ import { getColorFromFiles } from "util/getMultipleColors";
 import { extractVideoFrames } from "util/extractVideoFrames";
 import { createCanvasLines } from "util/createCanvasLines";
 import { getSocket } from "util/getSocket";
-import { setDirFileCountInterval, emitStatus } from "util/setDirFileCountInterval";
+import { setDirFileCountInterval, emitFileCountStatus } from "util/setDirFileCountInterval";
 
 export const receiveFile: RequestHandler[] = [
   upload.single("vid"),
@@ -41,14 +41,14 @@ export const receiveFile: RequestHandler[] = [
       // Watch dir callback
       const clearDirInvteral = await setDirFileCountInterval(
         FRAMES_DIR,
-        emitStatus(emitToClient),
+        emitFileCountStatus(emitToClient),
         1000
       );
 
       // Extract video frames
       // Input Path = file path
       // Output Path = ./frames/<filename>
-      await extractVideoFrames(req.file.path, FRAMES_DIR, "10%").catch(async (e) => {
+      await extractVideoFrames(req.file.path, FRAMES_DIR).catch(async (e) => {
         // Retry without size option
         console.log("errorrr");
         await extractVideoFrames(req.file.path, FRAMES_DIR).catch((e) => {
@@ -60,7 +60,7 @@ export const receiveFile: RequestHandler[] = [
       });
 
       // Manually emit that frame extraction is done
-      emitStatus(emitToClient)(1000);
+      emitFileCountStatus(emitToClient)(1000);
 
       // Stop updateing file count
       clearDirInvteral();
