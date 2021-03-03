@@ -30,22 +30,6 @@ export const setupSocket = (http: http.Server, app: Express) => {
       console.log("Disconnected: " + socket.id);
       app.set("sockets", sockets);
     });
-
-    socket.on("hey", () => {
-      console.log("HEYYY");
-    });
-
-    socket.on("fire", () => {
-      let count = 0;
-      const interval = setInterval(() => {
-        socket.emit("fire", count);
-        count++;
-      }, 1000);
-
-      setTimeout(() => {
-        clearInterval(interval);
-      }, 10000);
-    });
   });
 
   app.set("io", io);
@@ -57,4 +41,3 @@ function deleteByVal(val: string, obj: Sockets) {
     if (obj[key] == val) delete obj[key];
   }
 }
-export { io };
