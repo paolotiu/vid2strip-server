@@ -7,7 +7,7 @@ import { getColorFromFiles } from "util/getMultipleColors";
 import { extractVideoFrames } from "util/extractVideoFrames";
 import { createCanvasLines } from "util/createCanvasLines";
 import { getSocket } from "util/getSocket";
-import { setDirFileCountInterval } from "util/setDirFileCountInterval";
+import { setDirFileCountInterval, emitStatus } from "util/setDirFileCountInterval";
 
 export const receiveFile: RequestHandler[] = [
   upload.single("vid"),
@@ -20,10 +20,10 @@ export const receiveFile: RequestHandler[] = [
     }
 
     // Get client socket
-    const socket = getSocket(req, socketId);
+    const emitToClient = getSocket(req, socketId);
 
     // Validation check
-    if (!socket) {
+    if (!emitToClient) {
       return next(createHttpError(400, "No socket with that id"));
     }
     if (!req.file) {
@@ -36,31 +36,46 @@ export const receiveFile: RequestHandler[] = [
       // Make directory for video frames to go to
       fs.mkdirSync(FRAMES_DIR);
 
+      emitToClient("status", "Extracting Frames");
+
+      // Watch dir callback
+      const clearDirInvteral = await setDirFileCountInterval(
+        FRAMES_DIR,
+        emitStatus(emitToClient),
+        1000
+      );
+
       // Extract video frames
       // Input Path = file path
       // Output Path = ./frames/<filename>
-      socket.emit("status", "Extracting Frames");
+      await extractVideoFrames(req.file.path, FRAMES_DIR, "10%").catch(async (e) => {
+        // Retry without size option
+        console.log("errorrr");
+        await extractVideoFrames(req.file.path, FRAMES_DIR).catch((e) => {
+          // For any ffmpeg errors
+          clearDirInvteral();
+          emitToClient("status", { event: "Error", message: "Error in extracting frames" });
+          throw new Error(e.message);
+        });
+      });
 
-      // Watch dir callback
-      const clear = await setDirFileCountInterval(
-        FRAMES_DIR,
-        (files) => {
-          socket.emit("status", files.length + "%");
-        },
-        1000
-      );
-      await extractVideoFrames(req.file.path, FRAMES_DIR);
-      clear();
+      // Manually emit that frame extraction is done
+      emitStatus(emitToClient)(1000);
+
+      // Stop updateing file count
+      clearDirInvteral();
 
       // Get the files then sort
       const files = fs.readdirSync(FRAMES_DIR);
       const sorted = sortFiles(files, FRAMES_DIR);
 
+      emitToClient("status", "Collecting colors...");
       console.log("Getting colors");
 
       // Returns an array of tuples which are [<red>, <green>, <blue>]
       const colors = await getColorFromFiles(sorted.map((file) => FRAMES_DIR + "/" + file));
 
+      emitToClient("status", "Generating photo");
       console.log("Creating Photo");
 
       // Create canvas with lines
@@ -70,12 +85,12 @@ export const receiveFile: RequestHandler[] = [
       fs.unlinkSync(req.file.path);
       fs.rmdirSync(FRAMES_DIR, { recursive: true });
 
+      emitToClient("status", "Done");
       // Return data url of image
       res.json({ image: canvas.toDataURL("image/jpeg") });
     } catch (error) {
       // TODO: Better error handling
-      console.log(error);
-      res.json("");
+      res.json(error.message);
     }
   },
 ];
