@@ -1,4 +1,3 @@
-import { Color } from "color-thief-node";
 import { createCanvas } from "canvas";
 
 export const createCanvasLines = (colors: IFastAverageColorRgba[]) => {
