@@ -1,7 +1,7 @@
 import { Color } from "color-thief-node";
 import { createCanvas } from "canvas";
 
-export const createCanvasLines = (colors: Color[]) => {
+export const createCanvasLines = (colors: IFastAverageColorRgba[]) => {
   const canvas = createCanvas(1000, 200);
   const ctx = canvas.getContext("2d");
   let count = 0;

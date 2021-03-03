@@ -1,6 +1,6 @@
 import ffmpeg from "ffmpeg";
 
-export const extractVideoFrames = async (input: string, output: string) => {
+export const extractVideoFrames = async (input: string, output: string, size?: string) => {
   const video = await new ffmpeg(input);
 
   const seconds = video.metadata.duration?.seconds;
@@ -8,9 +8,11 @@ export const extractVideoFrames = async (input: string, output: string) => {
   video.setDisableVideo();
   video.setVideoFormat("mp4");
   console.log("Extracting frames");
-  await video.fnExtractFrameToJPG(output, {
+  const options = {
     frame_rate: 1000 / (seconds || 1000),
-    size: "10%",
-  });
+    size: "1%",
+  };
+
+  await video.fnExtractFrameToJPG(output, options);
   console.log("Done");
 };
