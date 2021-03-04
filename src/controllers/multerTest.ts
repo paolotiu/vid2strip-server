@@ -73,7 +73,10 @@ export const receiveFile: RequestHandler[] = [
       console.log("Getting colors");
 
       // Returns an array of tuples which are [<red>, <green>, <blue>]
-      const colors = await getColorFromFiles(sorted.map((file) => FRAMES_DIR + "/" + file));
+      const colors = await getColorFromFiles(
+        sorted.map((file) => FRAMES_DIR + "/" + file),
+        emitToClient
+      );
 
       emitToClient("status", "Generating photo");
       console.log("Creating Photo");

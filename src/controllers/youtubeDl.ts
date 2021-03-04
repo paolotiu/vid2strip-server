@@ -88,7 +88,10 @@ export const youtube: RequestHandler = async (req, res, next) => {
       const sorted = sortFiles(files, FRAMES_DIR);
 
       // Returns an array of tuples which are [<red>, <green>, <blue>]
-      const colors = await getColorFromFiles(sorted.map((file) => FRAMES_DIR + "/" + file));
+      const colors = await getColorFromFiles(
+        sorted.map((file) => FRAMES_DIR + "/" + file),
+        emitToClient
+      );
 
       // Creates canvas with colored lines
       const canvas = createCanvasLines(colors);
