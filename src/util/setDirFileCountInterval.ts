@@ -20,7 +20,7 @@ export const emitFileCountStatus = (emitter: Emitter) => (files: string[] | numb
   const fileCount = typeof files === "number" ? files : files.length;
   emitter("status", {
     event: "Frames",
-    value: Math.floor((fileCount / 1000) * 100),
+    value: Math.min(Math.floor((fileCount / 1000) * 100), 100),
     message: "Extracting Frames",
   });
 };
