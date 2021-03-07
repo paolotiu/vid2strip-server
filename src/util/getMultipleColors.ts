@@ -19,6 +19,12 @@ export const getColorFromFiles = async (filepaths: string[], emitter?: Emitter) 
       cb();
     }, 0);
   });
-
+  if (emitter) {
+    // Always finish with 100
+    emitter("status", {
+      event: "color",
+      value: 100,
+    });
+  }
   return colors;
 };
