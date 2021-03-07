@@ -96,6 +96,10 @@ export const receiveFile: RequestHandler[] = [
       // Return data url of image
       res.json({ image: canvas.toDataURL("image/jpeg") });
     } catch (error) {
+      // Cleanup vid and photos
+      fs.unlinkSync(req.file.path);
+      fs.rmdirSync(FRAMES_DIR, { recursive: true });
+
       // TODO: Better error handling
       res.json(error.message);
     }

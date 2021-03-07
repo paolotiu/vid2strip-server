@@ -103,6 +103,10 @@ export const youtube: RequestHandler = async (req, res, next) => {
       // Return dataURL to client
       res.json({ image: canvas.toDataURL("image/jpeg") });
     } catch (error) {
+      // Cleanup vid and photos
+      fs.unlinkSync(req.file.path);
+      fs.rmdirSync(FRAMES_DIR, { recursive: true });
+
       // Clear listener on error
       clearDirInvteral();
 
