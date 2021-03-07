@@ -96,6 +96,10 @@ export const youtube: RequestHandler = async (req, res, next) => {
       // Creates canvas with colored lines
       const canvas = createCanvasLines(colors);
 
+      // Emit finish event
+      emitToClient("status", {
+        event: "finish",
+      });
       // Return dataURL to client
       res.json({ image: canvas.toDataURL("image/jpeg") });
     } catch (error) {

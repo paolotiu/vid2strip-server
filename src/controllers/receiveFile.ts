@@ -88,7 +88,11 @@ export const receiveFile: RequestHandler[] = [
       fs.unlinkSync(req.file.path);
       fs.rmdirSync(FRAMES_DIR, { recursive: true });
 
-      emitToClient("status", "Done");
+      // Emit finish event
+      emitToClient("status", {
+        event: "finish",
+      });
+
       // Return data url of image
       res.json({ image: canvas.toDataURL("image/jpeg") });
     } catch (error) {

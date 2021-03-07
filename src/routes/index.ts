@@ -1,4 +1,4 @@
-import { receiveFile } from "controllers/multerTest";
+import { receiveFile } from "controllers/receiveFile";
 import { youtube } from "controllers/youtubeDl";
 import express from "express";
 import createHttpError from "http-errors";
